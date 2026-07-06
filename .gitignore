@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Generated datasets & measurement artifacts
+datasets/
+*.manifest.json
+records/
+*.png
+
+# Local secrets / config
+.env
+.env.local

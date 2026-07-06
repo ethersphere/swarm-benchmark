@@ -1,0 +1,31 @@
+{
+  "name": "swarm-benchmark",
+  "version": "0.1.0",
+  "description": "Reproducible, ad-hoc measurement tools for Swarm download bandwidth and BZZ cost.",
+  "type": "module",
+  "bin": {
+    "swarm-bench": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "swarm-bench": "tsx src/cli.ts",
+    "start": "tsx src/cli.ts"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@ethersphere/bee-js": "^9.5.1",
+    "chart.js": "^4.4.7",
+    "chartjs-node-canvas": "^5.0.0",
+    "dotenv": "^16.4.7",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/yargs": "^17.0.33",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
