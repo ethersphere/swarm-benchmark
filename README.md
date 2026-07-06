@@ -44,6 +44,24 @@ binary `node dist/cli.js <command>` / `swarm-bench <command>`.
 
 ## Commands
 
+### `run <type>` — the whole flow in one command
+Generate a dataset → run measured traffic (upload + download) → render a report,
+all into a timestamped `runs/<ts>-<type>-<mode>/` folder (`dataset/`,
+`records.json`, `report.png`).
+
+```bash
+swarm-bench run music-album -n 24 \
+  --upload-bee-url http://localhost:1633 \
+  --download-bee-url http://localhost:1641
+```
+Options: `-n/--count`, `--method measure|split` (default `measure`; see *Measuring
+cost*), `--mode serial|burst` (default `burst`), `--upload-bee-url`,
+`--download-bee-url`, `--batch-id` (default `SWARM_BATCH_ID`, else auto-detects a
+usable batch on the upload node), `-o/--out-dir` (default `runs`),
+`--sample-interval` (default 0.5), `--settle` (default 60). Preflights both nodes.
+
+The individual commands below let you run each step separately.
+
 ### `generate <type>`
 Create a randomized local dataset. Bytes are cryptographically random so every
 4 KB Bee chunk is unique (defeats dedup/caching).
@@ -107,6 +125,14 @@ swarm-bench report -i album-single.json -o album-single.png
 ```
 
 ## End-to-end example
+
+One command:
+
+```bash
+swarm-bench run music-album -n 100 --download-bee-url http://localhost:1641
+```
+
+Or the same flow as separate steps:
 
 ```bash
 swarm-bench generate music-album -n 100 -o datasets/album

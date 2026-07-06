@@ -9,13 +9,13 @@
  */
 
 import type { CommandModule } from 'yargs';
-import { makeBee } from '../lib/bee.js';
-import { uploadDataset } from '../lib/upload.js';
-import { runDownload } from '../lib/runner.js';
-import { renderChart } from '../lib/chart.js';
-import { readRecords } from '../lib/records.js';
-import { formatBytes } from '../lib/units.js';
-import type { DownloadMode } from '../lib/records.js';
+import { makeBee } from '../lib/bee';
+import { uploadDataset } from '../lib/upload';
+import { runDownload } from '../lib/runner';
+import { renderChart } from '../lib/chart';
+import { readRecords } from '../lib/records';
+import { formatBytes } from '../lib/units';
+import type { DownloadMode } from '../lib/records';
 
 interface Args {
   dataset: string;

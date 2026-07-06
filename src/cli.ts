@@ -1,14 +1,14 @@
-#!/usr/bin/env node
 import 'dotenv/config';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { generateCommand } from './commands/generate.js';
-import { uploadCommand } from './commands/upload.js';
-import { serialDownloadCommand, burstDownloadCommand } from './commands/download.js';
-import { measureCommand } from './commands/measure.js';
-import { reportCommand } from './commands/report.js';
+import { generateCommand } from './commands/generate';
+import { uploadCommand } from './commands/upload';
+import { serialDownloadCommand, burstDownloadCommand } from './commands/download';
+import { measureCommand } from './commands/measure';
+import { runCommand } from './commands/run';
+import { reportCommand } from './commands/report';
 
-await yargs(hideBin(process.argv))
+const cli = yargs(hideBin(process.argv))
   .scriptName('swarm-bench')
   .usage('$0 <command> [options]')
   .command(generateCommand)
@@ -16,17 +16,30 @@ await yargs(hideBin(process.argv))
   .command(serialDownloadCommand)
   .command(burstDownloadCommand)
   .command(measureCommand)
+  .command(runCommand)
   .command(reportCommand)
-  .demandCommand(1, 'Specify a command. Use --help to list commands.')
+  .demandCommand(1, 'Specify a command.')
   .strict()
   .help()
   .alias('h', 'help')
-  .fail((msg, err) => {
+  .fail((msg, err, y) => {
     if (err) {
       console.error(err.message);
     } else {
-      console.error(msg);
+      // Usage error (e.g. unknown command): show help, then the message.
+      y.showHelp('log');
+      console.error(`\n${msg}`);
     }
     process.exit(1);
-  })
-  .parseAsync();
+  });
+
+// Bare `swarm-bench` with no subcommand: print help and exit cleanly.
+if (hideBin(process.argv).length === 0) {
+  cli.showHelp('log');
+  process.exit(0);
+}
+
+cli.parseAsync().catch((err: unknown) => {
+  console.error(err instanceof Error ? err.message : err);
+  process.exit(1);
+});

@@ -1,7 +1,7 @@
 /** Periodic sampler for chequebook balance/cheques and download progress. */
 
 import type { Bee } from '@ethersphere/bee-js';
-import type { BalanceSample, ChequebookSample, ProgressSample } from './records.js';
+import type { BalanceSample, ChequebookSample, ProgressSample } from './records';
 
 export interface SamplerOptions {
   bee: Bee;

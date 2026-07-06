@@ -7,7 +7,8 @@
     "swarm-bench": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsup",
+    "typecheck": "tsc",
     "dev": "tsx src/cli.ts",
     "swarm-bench": "tsx src/cli.ts",
     "start": "tsx src/cli.ts"
@@ -25,6 +26,7 @@
   "devDependencies": {
     "@types/node": "^22.10.5",
     "@types/yargs": "^17.0.33",
+    "tsup": "^8.3.5",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }

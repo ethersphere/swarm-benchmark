@@ -1,7 +1,7 @@
 /** Measurement record types + JSON/CSV serialization (format by extension). */
 
 import { readFile, writeFile } from 'node:fs/promises';
-import { MB, plurToBzz } from './units.js';
+import { MB, plurToBzz } from './units';
 
 export type DownloadMode = 'serial' | 'burst';
 

@@ -1,9 +1,9 @@
 /** `serial-download` and `burst-download` — measure downloads while sampling. */
 
 import type { CommandModule } from 'yargs';
-import { runDownload } from '../lib/runner.js';
-import { readManifest } from '../lib/manifest.js';
-import type { DownloadMode } from '../lib/records.js';
+import { runDownload } from '../lib/runner';
+import { readManifest } from '../lib/manifest';
+import type { DownloadMode } from '../lib/records';
 
 interface Args {
   manifest: string;

@@ -4,8 +4,8 @@ import { createReadStream } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Bee } from '@ethersphere/bee-js';
-import { DATASET_FILE, type DatasetManifest } from './dataset.js';
-import type { ManifestFile } from './manifest.js';
+import { DATASET_FILE, type DatasetManifest } from './dataset';
+import type { ManifestFile } from './manifest';
 
 export interface UploadDatasetOptions {
   bee: Bee;

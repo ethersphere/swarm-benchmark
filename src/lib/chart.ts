@@ -3,9 +3,9 @@
 import { writeFile } from 'node:fs/promises';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
 import type { ChartConfiguration, ChartDataset } from 'chart.js';
-import type { Records } from './records.js';
-import { accountingOutflow } from './summary.js';
-import { MB, plurToBzz } from './units.js';
+import type { Records } from './records';
+import { accountingOutflow } from './summary';
+import { MB, plurToBzz } from './units';
 
 type Point = { x: number; y: number };
 type LineDataset = ChartDataset<'line', Point[]>;

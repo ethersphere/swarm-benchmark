@@ -1,6 +1,6 @@
 /** Dataset specifications for the `generate` command. */
 
-import { GB, KB, MB } from './units.js';
+import { GB, KB, MB } from './units';
 
 export const DATASET_TYPES = ['music-album', 'website', 'large-file'] as const;
 export type DatasetType = (typeof DATASET_TYPES)[number];

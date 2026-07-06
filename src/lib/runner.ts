@@ -1,14 +1,14 @@
 /** Orchestrates a serial or burst download run with sampling + settle window. */
 
 import { setTimeout as delay } from 'node:timers/promises';
-import { makeBee, isChequebookEnabled } from './bee.js';
-import { downloadWithProgress } from './download.js';
-import { Sampler } from './sampler.js';
-import { writeRecords } from './records.js';
-import type { DownloadMode, FileRecord, Records } from './records.js';
-import type { ManifestFile } from './manifest.js';
-import { formatBytes } from './units.js';
-import { printSummary } from './summary.js';
+import { makeBee, isChequebookEnabled } from './bee';
+import { downloadWithProgress } from './download';
+import { Sampler } from './sampler';
+import { writeRecords } from './records';
+import type { DownloadMode, FileRecord, Records } from './records';
+import type { ManifestFile } from './manifest';
+import { formatBytes } from './units';
+import { printSummary } from './summary';
 
 export interface RunOptions {
   mode: DownloadMode;

@@ -1,10 +1,10 @@
 /** `upload` — push a generated dataset to a Bee node, producing a manifest. */
 
 import type { CommandModule } from 'yargs';
-import { makeBee } from '../lib/bee.js';
-import { writeManifest } from '../lib/manifest.js';
-import { uploadDataset } from '../lib/upload.js';
-import { formatBytes } from '../lib/units.js';
+import { makeBee } from '../lib/bee';
+import { writeManifest } from '../lib/manifest';
+import { uploadDataset } from '../lib/upload';
+import { formatBytes } from '../lib/units';
 
 interface Args {
   dataset: string;

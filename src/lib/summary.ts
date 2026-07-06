@@ -1,7 +1,7 @@
 /** Derived statistics (speed, BZZ cost, MB/BZZ) from a records file. */
 
-import { MB, bzzString, mbPerBzz } from './units.js';
-import type { BalanceSample, Records } from './records.js';
+import { MB, bzzString, mbPerBzz } from './units';
+import type { BalanceSample, Records } from './records';
 
 /**
  * Total PLUR paid to peers between the baseline sample and `upTo` (default: the

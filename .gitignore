@@ -11,3 +11,6 @@ records/
 # Local secrets / config
 .env
 .env.local
+
+# Test-run outputs
+runs/

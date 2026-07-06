@@ -1,9 +1,9 @@
 /** `report` — chart download progress + chequebook balance and print stats. */
 
 import type { CommandModule } from 'yargs';
-import { renderChart } from '../lib/chart.js';
-import { readRecords } from '../lib/records.js';
-import { printSummary } from '../lib/summary.js';
+import { renderChart } from '../lib/chart';
+import { readRecords } from '../lib/records';
+import { printSummary } from '../lib/summary';
 
 interface Args {
   input: string;
