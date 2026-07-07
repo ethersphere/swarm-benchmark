@@ -9,6 +9,8 @@
   "scripts": {
     "build": "tsc && tsup",
     "typecheck": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "dev": "tsx src/cli.ts",
     "swarm-bench": "tsx src/cli.ts",
     "start": "tsx src/cli.ts"

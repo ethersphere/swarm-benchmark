@@ -14,3 +14,6 @@ records/
 
 # Test-run outputs
 runs/
+
+# Vitest coverage
+coverage/

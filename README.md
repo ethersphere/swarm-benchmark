@@ -31,6 +31,25 @@ Two things make download cost read as **zero** unless you're deliberate:
    over the network before the chunks replicate. Use distinct upload/download
    nodes.
 
+## Tests
+
+```bash
+npm test          # run once (vitest)
+npm run test:watch
+```
+
+- **Unit tests** (`test/unit/`) cover the pure logic: PLUR/BZZ + decimal-`Size`
+  conversions, dataset sizing, the cost math (`accountingOutflow` isolating
+  retrieval outflow from concurrent storage credit; `computeSummary` combining
+  cheque + accounting across all regimes), records JSON/CSV, capacity-aware
+  postage-batch selection, dedup-defeating random generation, and the
+  chequebook/balance sampler.
+- **Integration tests** (`test/integration/`) exercise each command with a
+  mocked Bee client (no live node) — generate, upload (incl. the 402 message),
+  serial/burst download, the 404-retry recovery, `measure` and `run`
+  orchestration (per-type default count, deferred vs synced, preflight), and
+  `report`.
+
 ## Install
 
 ```bash
