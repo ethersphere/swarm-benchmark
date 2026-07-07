@@ -1,6 +1,7 @@
 /** `generate` — create a randomized local dataset. */
 
 import path from 'node:path';
+import ora from 'ora';
 import type { CommandModule } from 'yargs';
 import { DATASET_TYPES, type DatasetType } from '../lib/dataset';
 import { generateDataset } from '../lib/generate';
@@ -36,14 +37,12 @@ export const generateCommand: CommandModule<unknown, Args> = {
   handler: async (args) => {
     const outDir = args.outDir ?? path.join('datasets', args.type);
 
-    const { specs, totalBytes } = await generateDataset(
-      args.type,
-      args.count,
-      outDir,
-      (spec, durationMs) =>
-        console.log(`generating ${spec.name} (${formatBytes(spec.size)}) ... done in ${(durationMs / 1000).toFixed(1)}s`),
-    );
-
-    console.log(`\nGenerated ${specs.length} file(s), ${formatBytes(totalBytes)} total in ${outDir}`);
+    const spinner = ora('Generating dataset…').start();
+    const { specs, totalBytes } = await generateDataset(args.type, args.count, outDir, {
+      onProgress: (spec, written) => {
+        spinner.text = `Generating ${spec.name} (${formatBytes(spec.size)}) · ${Math.floor((100 * written) / spec.size)}%`;
+      },
+    });
+    spinner.succeed(`Generated ${specs.length} file(s), ${formatBytes(totalBytes)} total in ${outDir}`);
   },
 };

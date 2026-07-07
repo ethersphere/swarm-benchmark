@@ -28,43 +28,27 @@ export async function renderChart(records: Records, outPath: string): Promise<vo
     },
   ];
 
-  const balances = records.balanceSamples;
-  if (balances.length > 0) {
-    datasets.push({
-      label: 'Retrieval spend — accounting (BZZ)',
-      data: balances.map((b) => ({ x: b.tMs / 1000, y: plurToBzz(accountingOutflow(balances, b)) })),
-      yAxisID: 'yBzz',
-      borderColor: '#9467bd',
-      backgroundColor: '#9467bd',
-      pointRadius: 0,
-      borderWidth: 2,
-    });
-  }
-
-  const hasChequebook = records.chequebookEnabled && records.chequebookSamples.length > 0;
-  const hasBzzAxis = hasChequebook || balances.length > 0;
-  if (hasChequebook) {
-    const chq = records.chequebookSamples;
-    const availBase = BigInt(chq[0].availableBalancePlur);
+  // Single total-cost curve: settled cheques + sub-threshold accounting outflow.
+  // (Cheques-sent and chequebook-balance-drop are the same committed amount, so
+  // plotting both just draws two coincident lines — we combine instead.)
+  const chq = records.chequebookSamples;
+  const hasCost = records.chequebookEnabled && chq.length > 0;
+  const hasBzzAxis = hasCost;
+  if (hasCost) {
     const chequeBase = BigInt(chq[0].totalChequesValuePlur);
+    const balanceByT = new Map(records.balanceSamples.map((b) => [b.tMs, b] as const));
     datasets.push({
-      label: 'Cheques sent — spend (BZZ)',
-      data: chq.map((c) => ({ x: c.tMs / 1000, y: plurToBzz(BigInt(c.totalChequesValuePlur) - chequeBase) })),
+      label: 'BZZ spent (total)',
+      data: chq.map((c) => {
+        const chequeDelta = BigInt(c.totalChequesValuePlur) - chequeBase;
+        const outflow = accountingOutflow(records.balanceSamples, balanceByT.get(c.tMs));
+        return { x: c.tMs / 1000, y: plurToBzz(chequeDelta + outflow) };
+      }),
       yAxisID: 'yBzz',
       borderColor: '#2ca02c',
       backgroundColor: '#2ca02c',
       pointRadius: 0,
       borderWidth: 2,
-    });
-    datasets.push({
-      label: 'Chequebook balance drop (BZZ)',
-      data: chq.map((c) => ({ x: c.tMs / 1000, y: plurToBzz(availBase - BigInt(c.availableBalancePlur)) })),
-      yAxisID: 'yBzz',
-      borderColor: '#d62728',
-      backgroundColor: '#d62728',
-      pointRadius: 0,
-      borderWidth: 2,
-      borderDash: [6, 4],
     });
   }
 

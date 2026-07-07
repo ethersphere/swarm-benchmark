@@ -1,5 +1,6 @@
 /** `report` — chart download progress + chequebook balance and print stats. */
 
+import ora from 'ora';
 import type { CommandModule } from 'yargs';
 import { renderChart } from '../lib/chart';
 import { readRecords } from '../lib/records';
@@ -29,8 +30,9 @@ export const reportCommand: CommandModule<unknown, Args> = {
       }) as never,
   handler: async (args) => {
     const records = await readRecords(args.input);
+    const spinner = ora('Rendering chart…').start();
     await renderChart(records, args.output);
-    console.log(`Wrote chart to ${args.output}`);
+    spinner.succeed(`Wrote chart to ${args.output}`);
     printSummary(records);
   },
 };

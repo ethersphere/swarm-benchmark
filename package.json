@@ -21,6 +21,7 @@
     "chart.js": "^4.4.7",
     "chartjs-node-canvas": "^5.0.0",
     "dotenv": "^16.4.7",
+    "ora": "^8.2.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {

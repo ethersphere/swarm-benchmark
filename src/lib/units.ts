@@ -1,8 +1,12 @@
-/** Unit constants and conversions for bytes and BZZ/PLUR. */
+/** BZZ/PLUR conversions and byte helpers (delegating size handling to bee-js). */
 
-export const KB = 1024;
-export const MB = 1024 * 1024;
-export const GB = 1024 * 1024 * 1024;
+import { Size } from '@ethersphere/bee-js';
+
+/**
+ * Bytes per megabyte. Decimal (1000-based) to match bee-js `Size`, which uses
+ * 1000 to stay consistent with the Swarm papers on storage capacity.
+ */
+export const MB = 1_000_000;
 
 /** 1 BZZ = 10^16 PLUR (BZZ has 16 decimals). */
 export const PLUR_PER_BZZ = 10n ** 16n;
@@ -17,12 +21,9 @@ export function bzzString(plur: bigint, digits = 8): string {
   return plurToBzz(plur).toFixed(digits);
 }
 
-/** Human-readable byte size, e.g. "5.00 MB". */
+/** Human-readable byte size, e.g. "5 MB" (via bee-js `Size`). */
 export function formatBytes(bytes: number): string {
-  if (bytes >= GB) return `${(bytes / GB).toFixed(2)} GB`;
-  if (bytes >= MB) return `${(bytes / MB).toFixed(2)} MB`;
-  if (bytes >= KB) return `${(bytes / KB).toFixed(2)} KB`;
-  return `${bytes} B`;
+  return Size.fromBytes(bytes).toFormattedString();
 }
 
 /**

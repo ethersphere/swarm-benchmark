@@ -8,13 +8,13 @@
  * in one process minimizes the gap so the download wins that race.
  */
 
+import ora from 'ora';
 import type { CommandModule } from 'yargs';
 import { makeBee } from '../lib/bee';
 import { uploadDataset } from '../lib/upload';
 import { runDownload } from '../lib/runner';
 import { renderChart } from '../lib/chart';
 import { readRecords } from '../lib/records';
-import { formatBytes } from '../lib/units';
 import type { DownloadMode } from '../lib/records';
 
 interface Args {
@@ -27,6 +27,7 @@ interface Args {
   report?: string;
   sampleInterval: number;
   settle: number;
+  retries: number;
 }
 
 export const measureCommand: CommandModule<unknown, Args> = {
@@ -83,6 +84,11 @@ export const measureCommand: CommandModule<unknown, Args> = {
         type: 'number',
         default: 60,
         describe: 'Seconds to keep sampling after downloads finish (late cheques)',
+      })
+      .option('retries', {
+        type: 'number',
+        default: 3,
+        describe: 'Retries for a 404 (deferred-race straggler not yet retrievable)',
       }) as never,
   handler: async (args) => {
     if (!args.batchId) {
@@ -96,15 +102,20 @@ export const measureCommand: CommandModule<unknown, Args> = {
     }
 
     const uploadBee = makeBee(args.uploadBeeUrl);
-    console.log(`Uploading dataset ${args.dataset} to ${args.uploadBeeUrl} (deferred)...`);
+    const upSpinner = ora(`Uploading to ${args.uploadBeeUrl} (deferred)…`).start();
     const files = await uploadDataset({
       bee: uploadBee,
       datasetDir: args.dataset,
       batchId: args.batchId,
       deferred: true,
-      onFile: (f) => process.stdout.write(`  + ${f.name} (${formatBytes(f.size)})\r`),
+      onProgress: (name, sent, total) => {
+        upSpinner.text =
+          sent < total
+            ? `Uploading ${name} · ${Math.floor((100 * sent) / total)}%`
+            : `Uploading ${name} · node storing chunks…`;
+      },
     });
-    console.log(`\nUploaded ${files.length} file(s). Downloading immediately to win the race.\n`);
+    upSpinner.succeed(`Uploaded ${files.length} file(s). Downloading immediately to win the race.`);
 
     await runDownload({
       mode: args.mode,
@@ -113,12 +124,14 @@ export const measureCommand: CommandModule<unknown, Args> = {
       beeUrl: args.downloadBeeUrl,
       sampleIntervalMs: Math.round(args.sampleInterval * 1000),
       settleMs: Math.round(args.settle * 1000),
+      notFoundRetries: args.retries,
     });
 
     if (args.report) {
+      const reportSpinner = ora('Rendering report…').start();
       const records = await readRecords(args.out);
       await renderChart(records, args.report);
-      console.log(`\nWrote chart to ${args.report}`);
+      reportSpinner.succeed(`Wrote chart to ${args.report}`);
     }
   },
 };

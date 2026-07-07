@@ -14,9 +14,14 @@ const BLOCK = 1024 * 1024; // 1 MiB write blocks
  * is allocated per block because `stream.write` retains the buffer reference
  * until it is flushed, so the buffer must not be reused/overwritten.
  */
-export async function writeRandomFile(filePath: string, size: number): Promise<void> {
+export async function writeRandomFile(
+  filePath: string,
+  size: number,
+  onProgress?: (written: number) => void,
+): Promise<void> {
   const stream = createWriteStream(filePath);
   let remaining = size;
+  let written = 0;
   try {
     while (remaining > 0) {
       const n = Math.min(BLOCK, remaining);
@@ -26,6 +31,8 @@ export async function writeRandomFile(filePath: string, size: number): Promise<v
         await once(stream, 'drain');
       }
       remaining -= n;
+      written += n;
+      onProgress?.(written);
     }
   } finally {
     stream.end();

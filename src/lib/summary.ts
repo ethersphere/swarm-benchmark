@@ -129,7 +129,7 @@ export function printSummary(records: Records): void {
     console.log(`Balance drop:    ${bzzString(s.balanceSpentPlur)} BZZ`);
     if (s.mbPerBzz !== null) {
       console.log(
-        `\n  ➜ ${s.mbPerBzz.toFixed(1)} MB per BZZ  (${(s.mbPerBzz / 1024).toFixed(3)} GB per BZZ)  [from ${s.spentSource}]`,
+        `\n  ➜ ${s.mbPerBzz.toFixed(1)} MB per BZZ  (${(s.mbPerBzz / 1000).toFixed(3)} GB per BZZ)  [from ${s.spentSource}]`,
       );
     } else {
       console.log(

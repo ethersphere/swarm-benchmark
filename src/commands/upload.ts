@@ -1,10 +1,10 @@
 /** `upload` — push a generated dataset to a Bee node, producing a manifest. */
 
+import ora from 'ora';
 import type { CommandModule } from 'yargs';
 import { makeBee } from '../lib/bee';
 import { writeManifest } from '../lib/manifest';
 import { uploadDataset } from '../lib/upload';
-import { formatBytes } from '../lib/units';
 
 interface Args {
   dataset: string;
@@ -54,15 +54,21 @@ export const uploadCommand: CommandModule<unknown, Args> = {
     }
 
     const bee = makeBee(args.beeUrl);
-    console.log(`Uploading dataset ${args.dataset} to ${args.beeUrl}\n`);
+    const spinner = ora(`Uploading dataset to ${args.beeUrl}…`).start();
 
     const files = await uploadDataset({
       bee,
       datasetDir: args.dataset,
       batchId: args.batchId,
       deferred: args.deferred,
-      onFile: (f) => console.log(`  ${f.name} (${formatBytes(f.size)}) ... ${f.reference}`),
+      onProgress: (name, sent, total) => {
+        spinner.text =
+          sent < total
+            ? `Uploading ${name} · ${Math.floor((100 * sent) / total)}%`
+            : `Uploading ${name} · node storing chunks…`;
+      },
     });
+    spinner.succeed(`Uploaded ${files.length} file(s) to ${args.beeUrl}`);
 
     await writeManifest(args.out, {
       uploadedAt: new Date().toISOString(),
@@ -70,6 +76,6 @@ export const uploadCommand: CommandModule<unknown, Args> = {
       batchId: args.batchId,
       files,
     });
-    console.log(`\nWrote manifest to ${args.out}`);
+    console.log(`Wrote manifest to ${args.out}`);
   },
 };

@@ -11,6 +11,7 @@ interface Args {
   beeUrl: string;
   sampleInterval: number;
   settle: number;
+  retries: number;
 }
 
 function makeCommand(
@@ -49,6 +50,11 @@ function makeCommand(
           type: 'number',
           default: 60,
           describe: 'Seconds to keep sampling after downloads finish (late cheques)',
+        })
+        .option('retries', {
+          type: 'number',
+          default: 3,
+          describe: 'Retries for a 404 (deferred-race straggler not yet retrievable)',
         }) as never,
     handler: async (args) => {
       const manifest = await readManifest(args.manifest);
@@ -59,6 +65,7 @@ function makeCommand(
         beeUrl: args.beeUrl,
         sampleIntervalMs: Math.round(args.sampleInterval * 1000),
         settleMs: Math.round(args.settle * 1000),
+        notFoundRetries: args.retries,
       });
     },
   };

@@ -1,6 +1,6 @@
 /** Dataset specifications for the `generate` command. */
 
-import { GB, KB, MB } from './units';
+import { Size } from '@ethersphere/bee-js';
 
 export const DATASET_TYPES = ['music-album', 'website', 'large-file'] as const;
 export type DatasetType = (typeof DATASET_TYPES)[number];
@@ -38,13 +38,16 @@ export function planDataset(type: DatasetType, count: number): DatasetFileSpec[]
   for (let i = 0; i < count; i++) {
     switch (type) {
       case 'music-album':
-        specs.push({ name: `track-${pad(i)}.bin`, size: 5 * MB });
+        specs.push({ name: `track-${pad(i)}.bin`, size: Size.fromMegabytes(5).toBytes() });
         break;
       case 'website':
-        specs.push({ name: `asset-${pad(i)}.bin`, size: randInt(100 * KB, 2 * MB) });
+        specs.push({
+          name: `asset-${pad(i)}.bin`,
+          size: randInt(Size.fromKilobytes(100).toBytes(), Size.fromMegabytes(2).toBytes()),
+        });
         break;
       case 'large-file':
-        specs.push({ name: `large-${pad(i)}.bin`, size: GB });
+        specs.push({ name: `large-${pad(i)}.bin`, size: Size.fromGigabytes(1).toBytes() });
         break;
     }
   }

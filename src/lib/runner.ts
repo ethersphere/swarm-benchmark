@@ -1,13 +1,14 @@
 /** Orchestrates a serial or burst download run with sampling + settle window. */
 
 import { setTimeout as delay } from 'node:timers/promises';
+import ora from 'ora';
 import { makeBee, isChequebookEnabled } from './bee';
 import { downloadWithProgress } from './download';
 import { Sampler } from './sampler';
 import { writeRecords } from './records';
 import type { DownloadMode, FileRecord, Records } from './records';
 import type { ManifestFile } from './manifest';
-import { formatBytes } from './units';
+import { MB } from './units';
 import { printSummary } from './summary';
 
 export interface RunOptions {
@@ -17,6 +18,9 @@ export interface RunOptions {
   beeUrl: string;
   sampleIntervalMs: number;
   settleMs: number;
+  /** Retries for a 404 (deferred-race straggler not yet retrievable). Default 3. */
+  notFoundRetries?: number;
+  notFoundRetryDelayMs?: number;
 }
 
 export async function runDownload(opts: RunOptions): Promise<void> {
@@ -81,21 +85,48 @@ export async function runDownload(opts: RunOptions): Promise<void> {
   });
   sampler.start();
 
+  const totalExpected = files.reduce((sum, f) => sum + f.size, 0) || 1;
+  const spinner = ora('Downloading…').start();
+  const progressTimer = setInterval(() => {
+    const done = Object.values(perFile).reduce((a, b) => a + b, 0);
+    const secs = (Date.now() - t0) / 1000;
+    const doneFiles = files.filter((f) => f.finishedAt).length;
+    spinner.text =
+      `Downloading ${doneFiles}/${files.length} files · ` +
+      `${(done / MB).toFixed(1)}/${(totalExpected / MB).toFixed(1)} MB ` +
+      `(${Math.floor((100 * done) / totalExpected)}%) · ` +
+      `${(done / MB / Math.max(secs, 0.001)).toFixed(1)} MB/s`;
+  }, 200);
+
+  const notFoundRetries = opts.notFoundRetries ?? 3;
+  const notFoundRetryDelayMs = opts.notFoundRetryDelayMs ?? 2000;
+
   const runOne = async (rec: FileRecord): Promise<void> => {
     const start = Date.now();
     rec.startedAt = new Date(start).toISOString();
-    try {
-      await downloadWithProgress(bee, rec.reference, (delta) => {
-        perFile[rec.name] += delta;
-        rec.bytesDownloaded += delta;
-      });
-    } catch (err) {
-      rec.error = err instanceof Error ? err.message : String(err);
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await downloadWithProgress(bee, rec.reference, (delta) => {
+          perFile[rec.name] += delta;
+          rec.bytesDownloaded += delta;
+        });
+        rec.error = null;
+        break;
+      } catch (err) {
+        rec.error = err instanceof Error ? err.message : String(err);
+        const notFound = (err as { status?: number })?.status === 404 || /\b404\b/.test(String(err));
+        // A deferred-race straggler is briefly unretrievable and 404s before any
+        // bytes arrive; give it a moment. It's still absent from the download
+        // node, so the retry still crosses the network (no cost skew).
+        if (notFound && rec.bytesDownloaded === 0 && attempt < notFoundRetries) {
+          await delay(notFoundRetryDelayMs);
+          continue;
+        }
+        break;
+      }
     }
     rec.durationMs = Date.now() - start;
     rec.finishedAt = new Date().toISOString();
-    const status = rec.error ? `FAILED (${rec.error})` : formatBytes(rec.bytesDownloaded);
-    console.log(`  ${rec.name}: ${status} in ${(rec.durationMs / 1000).toFixed(1)}s`);
   };
 
   if (opts.mode === 'serial') {
@@ -104,12 +135,26 @@ export async function runDownload(opts: RunOptions): Promise<void> {
     await Promise.allSettled(files.map(runOne));
   }
 
-  console.log(
-    `\nDownloads finished. Settling ${
-      opts.settleMs / 1000
-    }s to capture late cheques...`,
-  );
+  clearInterval(progressTimer);
+  const downloaded = Object.values(perFile).reduce((a, b) => a + b, 0);
+  const failed = files.filter((f) => f.error);
+  const summaryText = `Downloaded ${(downloaded / MB).toFixed(1)} MB across ${
+    files.length - failed.length
+  }/${files.length} file(s)`;
+  if (failed.length) spinner.warn(summaryText);
+  else spinner.succeed(summaryText);
+  for (const f of failed) console.log(`    ✗ ${f.name}: ${f.error}`);
+
+  // Keep sampling through the settle window with a live countdown.
+  const settleSpinner = ora(`Settling ${opts.settleMs / 1000}s for late cheques…`).start();
+  const settleEnd = Date.now() + opts.settleMs;
+  const settleTimer = setInterval(() => {
+    const left = Math.max(0, Math.ceil((settleEnd - Date.now()) / 1000));
+    settleSpinner.text = `Settling ${left}s for late cheques…`;
+  }, 500);
   await delay(opts.settleMs);
+  clearInterval(settleTimer);
+  settleSpinner.succeed('Settle window complete');
 
   await sampler.stop();
   records.finishedAt = new Date().toISOString();
