@@ -38,8 +38,8 @@ Two things make download cost read as **zero** unless you're deliberate:
 ## Tests
 
 ```bash
-npm test          # run once (vitest)
-npm run test:watch
+pnpm test          # run once (vitest)
+pnpm test:watch
 ```
 
 - **Unit tests** (`test/unit/`) cover the pure logic: PLUR/BZZ + decimal-`Size`
@@ -57,12 +57,12 @@ npm run test:watch
 ## Install
 
 ```bash
-npm install
-npm run build      # compiles to dist/, exposes the `swarm-bench` bin
+pnpm install
+pnpm build             # compiles to dist/, exposes the `swarm-bench` bin
 cp .env.example .env   # set BEE_UPLOAD_URL, BEE_DOWNLOAD_URL, SWARM_BATCH_ID
 ```
 
-Run without building via `npm run dev -- <command>` (uses `tsx`), or the built
+Run without building via `pnpm dev <command>` (uses `tsx`), or the built
 binary `node dist/cli.js <command>` / `swarm-bench <command>`.
 
 ## Commands
