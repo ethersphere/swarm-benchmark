@@ -33,6 +33,7 @@ const base = {
   batchId: 'batch-1',
   mode: 'burst' as const,
   out: 'records.json',
+  propagationWait: 0,
   sampleInterval: 0.01,
   settle: 0,
   retries: 3,

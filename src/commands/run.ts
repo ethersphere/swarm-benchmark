@@ -11,6 +11,7 @@
  */
 
 import path from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import ora from 'ora';
 import type { CommandModule } from 'yargs';
 import { makeBee } from '../lib/bee';
@@ -33,9 +34,25 @@ interface Args {
   downloadBeeUrl: string;
   batchId?: string;
   outDir: string;
+  propagationWait: number;
   sampleInterval: number;
   settle: number;
   retries: number;
+}
+
+/** Sleep with a live countdown spinner so chunks can propagate/settle. */
+async function propagationWait(seconds: number): Promise<void> {
+  const ms = Math.round(seconds * 1000);
+  if (ms <= 0) return;
+  const spinner = ora(`Waiting ${seconds}s for chunks to propagate…`).start();
+  const end = Date.now() + ms;
+  const timer = setInterval(() => {
+    const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    spinner.text = `Waiting ${left}s for chunks to propagate…`;
+  }, 500);
+  await delay(ms);
+  clearInterval(timer);
+  spinner.succeed('Propagation wait complete');
 }
 
 function runStamp(): string {
@@ -62,7 +79,7 @@ export const runCommand: CommandModule<unknown, Args> = {
         type: 'string',
         choices: ['measure', 'split'] as const,
         default: 'measure' as const,
-        describe: 'measure = deferred upload + immediate download (local mesh); split = synced upload then download (mainnet)',
+        describe: 'measure = deferred upload then download (waits --propagation-wait between); split = synced upload then download',
       })
       .option('mode', {
         type: 'string',
@@ -90,6 +107,11 @@ export const runCommand: CommandModule<unknown, Args> = {
         type: 'string',
         default: 'runs',
         describe: 'Root directory for run output (a timestamped subdir is created)',
+      })
+      .option('propagation-wait', {
+        type: 'number',
+        default: 60,
+        describe: 'Seconds to wait after upload for chunks to propagate/settle before downloading (raise for multi-GB datasets; 0 to download immediately)',
       })
       .option('sample-interval', { type: 'number', default: 0.5, describe: 'Seconds between samples' })
       .option('settle', { type: 'number', default: 60, describe: 'Seconds to sample after downloads finish' })
@@ -159,6 +181,9 @@ export const runCommand: CommandModule<unknown, Args> = {
       },
     });
     upSpinner.succeed(`Uploaded ${files.length} file(s) to ${args.uploadBeeUrl}`);
+
+    // Let the just-uploaded chunks propagate/settle before downloading.
+    await propagationWait(args.propagationWait);
 
     await runDownload({
       mode: args.mode,

@@ -35,6 +35,7 @@ const base = {
   downloadBeeUrl: 'http://dl',
   batchId: 'batch-1',
   outDir: 'runs',
+  propagationWait: 0,
   sampleInterval: 0.01,
   settle: 0,
   retries: 3,
@@ -69,6 +70,15 @@ describe('run command orchestration', () => {
     m.generateDataset.mockClear();
     await run({ type: 'music-album' });
     expect(m.generateDataset.mock.calls[0].slice(0, 2)).toEqual(['music-album', 24]);
+  });
+
+  it('waits between upload and download, then downloads', async () => {
+    const order: string[] = [];
+    m.uploadDataset.mockImplementationOnce(async () => { order.push('upload'); return [{ name: 'a', reference: 'r', size: 1 }]; });
+    m.runDownload.mockImplementationOnce(async () => { order.push('download'); });
+    await run({ type: 'website', count: 1, propagationWait: 0.02 });
+    expect(order).toEqual(['upload', 'download']);
+    expect(m.runDownload).toHaveBeenCalledOnce();
   });
 
   it('uploads deferred for measure and synced for split', async () => {

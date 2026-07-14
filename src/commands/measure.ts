@@ -1,13 +1,15 @@
 /**
  * `measure` — one-shot cost measurement: deferred-upload a dataset to one node,
- * then immediately download it from another, in a single process.
+ * wait for the chunks to propagate/settle (`--propagation-wait`, default 60s),
+ * then download it from another node so retrieval crosses the network and
+ * incurs cheques/accounting debt.
  *
- * Uploading deferred keeps the data on the upload node; downloading immediately
- * from a different node forces retrieval over the network (and cheques/accounting
- * debt) before pull-sync replicates the chunks to the download node. Doing both
- * in one process minimizes the gap so the download wins that race.
+ * Note: on a fully-replicating mesh (bee-factory, storageRadius=0) a long wait
+ * lets the chunks reach the download node too, making retrieval free — set
+ * `--propagation-wait 0` there to download before replication and still see cost.
  */
 
+import { setTimeout as delay } from 'node:timers/promises';
 import ora from 'ora';
 import type { CommandModule } from 'yargs';
 import { makeBee } from '../lib/bee';
@@ -25,9 +27,25 @@ interface Args {
   mode: DownloadMode;
   out: string;
   report?: string;
+  propagationWait: number;
   sampleInterval: number;
   settle: number;
   retries: number;
+}
+
+/** Sleep with a live countdown spinner so chunks can propagate/settle. */
+async function propagationWait(seconds: number): Promise<void> {
+  const ms = Math.round(seconds * 1000);
+  if (ms <= 0) return;
+  const spinner = ora(`Waiting ${seconds}s for chunks to propagate…`).start();
+  const end = Date.now() + ms;
+  const timer = setInterval(() => {
+    const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    spinner.text = `Waiting ${left}s for chunks to propagate…`;
+  }, 500);
+  await delay(ms);
+  clearInterval(timer);
+  spinner.succeed('Propagation wait complete');
 }
 
 export const measureCommand: CommandModule<unknown, Args> = {
@@ -80,6 +98,11 @@ export const measureCommand: CommandModule<unknown, Args> = {
         default: 0.5,
         describe: 'Seconds between chequebook/progress samples',
       })
+      .option('propagation-wait', {
+        type: 'number',
+        default: 60,
+        describe: 'Seconds to wait after upload for chunks to propagate/settle before downloading (raise for multi-GB datasets; 0 to download immediately)',
+      })
       .option('settle', {
         type: 'number',
         default: 60,
@@ -115,7 +138,10 @@ export const measureCommand: CommandModule<unknown, Args> = {
             : `Uploading ${name} · node storing chunks…`;
       },
     });
-    upSpinner.succeed(`Uploaded ${files.length} file(s). Downloading immediately to win the race.`);
+    upSpinner.succeed(`Uploaded ${files.length} file(s).`);
+
+    // Let the just-uploaded chunks propagate/settle before downloading.
+    await propagationWait(args.propagationWait);
 
     await runDownload({
       mode: args.mode,

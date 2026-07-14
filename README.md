@@ -24,12 +24,16 @@ Two things make download cost read as **zero** unless you're deliberate:
 1. **Payment threshold** — Bee only issues a cheque once per-peer debt crosses a
    threshold, so small downloads show no cheque. The tool also samples SWAP
    **accounting debt** (`/balances`) to catch sub-threshold cost.
-2. **Full replication** — on a small mesh (e.g. bee-factory, `storageRadius=0`)
-   every node stores every chunk, so a normal upload-then-download reads from the
-   download node's own store for free. Use **`measure`**: it deferred-uploads and
-   immediately downloads from another node in one process, so retrieval happens
-   over the network before the chunks replicate. Use distinct upload/download
-   nodes.
+2. **Propagation** — just-uploaded chunks need to propagate/settle before another
+   node can retrieve them, or the download 404s. `run`/`measure` wait
+   `--propagation-wait` seconds (default 60; raise for multi-GB) after upload
+   before downloading. Always use distinct upload/download nodes.
+3. **Full replication** — on a small mesh (e.g. bee-factory, `storageRadius=0`)
+   every node stores every chunk, so once chunks propagate the download node has
+   them too and serves them free. There, set **`--propagation-wait 0`** to
+   download before replication reaches the download node and still incur cost. On
+   mainnet (`storageRadius > 0`) the download node isn't a storer, so the default
+   wait is correct and it pays for retrieval.
 
 ## Tests
 
@@ -77,7 +81,9 @@ Options: `-n/--count`, `--method measure|split` (default `measure`; see *Measuri
 cost*), `--mode serial|burst` (default `burst`), `--upload-bee-url`,
 `--download-bee-url`, `--batch-id` (default `SWARM_BATCH_ID`, else auto-detects a
 usable batch on the upload node), `-o/--out-dir` (default `runs`),
-`--sample-interval` (default 0.5), `--settle` (default 60). Preflights both nodes.
+`--propagation-wait` (seconds after upload before downloading, default 60 — raise
+for multi-GB datasets; `0` to download immediately), `--sample-interval`
+(default 0.5), `--settle` (default 60). Preflights both nodes.
 
 The individual commands below let you run each step separately.
 
@@ -132,8 +138,9 @@ swarm-bench measure -i datasets/album \
 ```
 Options: `--upload-bee-url` (default `BEE_UPLOAD_URL`), `--download-bee-url`
 (default `BEE_DOWNLOAD_URL`), `--batch-id`, `--mode serial|burst` (default
-`burst`), `-o/--out`, `-r/--report <png>`, `--sample-interval` (default 0.5),
-`--settle` (default 60).
+`burst`), `-o/--out`, `-r/--report <png>`, `--propagation-wait` (seconds after
+upload before downloading, default 60; `0` to download immediately), `--sample-interval`
+(default 0.5), `--settle` (default 60).
 
 ### `report`
 Render a PNG (progress + chequebook over time) and print stats (MB/s, BZZ spent,
